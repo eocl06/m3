@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Günaydın</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+  * {
+    margin: 0; padding: 0; box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    position: fixed;
+    inset: 0;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse at 50% 100%, #ffd89b 0%, transparent 55%),
+      linear-gradient(180deg,
+        #4a2e5e 0%,
+        #8a4561 18%,
+        #c4626e 38%,
+        #f4906e 58%,
+        #f9c9a0 78%,
+        #fde4c4 100%);
+    font-family: 'Cormorant Garamond', serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: 0.5;
+    z-index: 20;
+    mix-blend-mode: overlay;
+  }
+
+  .hint {
+    position: absolute;
+    top: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    color: rgba(255, 245, 230, 0.92);
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 10px rgba(60, 20, 40, 0.5);
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+    text-align: center;
+    transition: opacity 0.6s;
+  }
+  .hint.fade { opacity: 0; }
+
+  /* Drawing canvas */
+  #drawCanvas {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    touch-action: none;
+  }
+
+  /* Ghost heart guide */
+  .guide {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 70vw;
+    max-width: 320px;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0.18;
+    animation: guidePulse 2.5s ease-in-out infinite;
+  }
+  @keyframes guidePulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.3; }
+  }
+
+  .heart-fill {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 70vw;
+    max-width: 320px;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    filter: drop-shadow(0 0 20px rgba(255, 180, 200, 0.7));
+  }
+  .heart-fill.show { opacity: 1; animation: heartBeat 0.8s ease forwards; }
+  @keyframes heartBeat {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+    50%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  /* Falling flower */
+  .flower {
+    position: fixed;
+    pointer-events: none;
+    z-index: 30;
+    will-change: transform;
+  }
+
+  /* Final overlay */
+  .final {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 100;
+    background: radial-gradient(ellipse at center, rgba(74, 46, 94, 0.6), rgba(74, 46, 94, 0.92));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .final.show { display: flex; animation: fadeIn 0.8s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .final-text {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: clamp(2.8rem, 13vw, 5.5rem);
+    color: #fff5e6;
+    text-align: center;
+    line-height: 1.05;
+    padding: 0 24px;
+    text-shadow: 0 4px 24px rgba(255, 180, 120, 0.5);
+    opacity: 0;
+    transform: scale(0.7);
+    animation: finalIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+  }
+  @keyframes finalIn { to { opacity: 1; transform: scale(1); } }
+
+  .final-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: rgba(255, 245, 230, 0.75);
+    margin-top: 22px;
+    opacity: 0;
+    animation: finalIn 0.9s ease 0.9s forwards;
+    text-align: center;
+    padding: 0 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hint" id="hint">parmağınla kalp çiz 💗</div>
+
+<svg class="guide" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 80 C 20 60, 10 30, 30 18 C 42 12, 50 22, 50 32 C 50 22, 58 12, 70 18 C 90 30, 80 60, 50 80 Z"
+        fill="none" stroke="rgba(255,245,230,0.6)" stroke-width="2" stroke-dasharray="4 4"/>
+</svg>
+
+<svg class="heart-fill" id="heartFill" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="heartGrad" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#ffb6c1"/>
+      <stop offset="60%" stop-color="#e85d75"/>
+      <stop offset="100%" stop-color="#a83154"/>
+    </radialGradient>
+  </defs>
+  <path d="M50 80 C 20 60, 10 30, 30 18 C 42 12, 50 22, 50 32 C 50 22, 58 12, 70 18 C 90 30, 80 60, 50 80 Z"
+        fill="url(#heartGrad)"/>
+</svg>
+
+<canvas id="drawCanvas"></canvas>
+
+<div class="final" id="final">
+  <div class="final-text">günaydın</div>
+</div>
+
+<script>
+const canvas = document.getElementById('drawCanvas');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+const heartFill = document.getElementById('heartFill');
+const finalEl = document.getElementById('final');
+
+// Block all native scroll/zoom gestures
+document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('gesturechange', (e) => e.preventDefault());
+document.addEventListener('gestureend', (e) => e.preventDefault());
+document.addEventListener('touchstart', (e) => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight * devicePixelRatio;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+
+let drawing = false;
+let points = [];
+let done = false;
+
+function getXY(e) {
+  const t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX, y: t.clientY };
+}
+
+function startDraw(e) {
+  if (done) return;
+  e.preventDefault();
+  drawing = true;
+  points = [];
+  hint.classList.add('fade');
+  const p = getXY(e);
+  points.push(p);
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+}
+
+function moveDraw(e) {
+  if (!drawing || done) return;
+  e.preventDefault();
+  const p = getXY(e);
+  points.push(p);
+  drawPath();
+}
+
+function drawPath() {
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+  // Soft trail with glow
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Outer glow
+  ctx.strokeStyle = 'rgba(255, 200, 220, 0.4)';
+  ctx.lineWidth = 16;
+  ctx.shadowColor = '#ff8ab0';
+  ctx.shadowBlur = 25;
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+
+  // Inner line
+  ctx.strokeStyle = 'rgba(255, 245, 240, 0.95)';
+  ctx.lineWidth = 4;
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+}
+
+function endDraw(e) {
+  if (!drawing || done) return;
+  e && e.preventDefault();
+  drawing = false;
+  checkHeart();
+}
+
+// Pointer events for unified mouse + touch
+canvas.addEventListener('pointerdown', startDraw);
+canvas.addEventListener('pointermove', moveDraw);
+canvas.addEventListener('pointerup', endDraw);
+canvas.addEventListener('pointercancel', endDraw);
+canvas.addEventListener('pointerleave', endDraw);
+
+function checkHeart() {
+  if (points.length < 15) {
+    // Too short — clear
+    fadeOutCanvas();
+    return;
+  }
+
+  // Compute centroid + check if path is closed-ish and roughly heart-shaped
+  let sumX = 0, sumY = 0;
+  points.forEach(p => { sumX += p.x; sumY += p.y; });
+  const cx = sumX / points.length;
+  const cy = sumY / points.length;
+
+  // Bounding box
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  points.forEach(p => {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  });
+  const w = maxX - minX, h = maxY - minY;
+
+  // Heuristic checks: must be sufficiently large AND closed
+  const minDim = Math.min(window.innerWidth, window.innerHeight);
+  if (w < minDim * 0.18 || h < minDim * 0.18) {
+    fadeOutCanvas();
+    return;
+  }
+
+  // Closed-ish: first and last point distance < 25% of bounding diagonal
+  const first = points[0];
+  const last = points[points.length - 1];
+  const dist = Math.hypot(first.x - last.x, first.y - last.y);
+  const diag = Math.hypot(w, h);
+  if (dist > diag * 0.45) {
+    // Not closed — just clear and let them try again
+    fadeOutCanvas();
+    return;
+  }
+
+  // Aspect ratio roughly heart-like: width similar to height (between 0.6 and 1.8)
+  const ar = w / h;
+  if (ar < 0.5 || ar > 2.2) {
+    fadeOutCanvas();
+    return;
+  }
+
+  // Top dip check: at the top of the shape, are there points on both left AND right side
+  // (a heart has 2 humps at top)
+  const topThreshold = minY + h * 0.25;
+  let leftHump = false, rightHump = false;
+  points.forEach(p => {
+    if (p.y < topThreshold) {
+      if (p.x < cx - w * 0.1) leftHump = true;
+      if (p.x > cx + w * 0.1) rightHump = true;
+    }
+  });
+  if (!leftHump || !rightHump) {
+    fadeOutCanvas();
+    return;
+  }
+
+  // ✓ Heart detected!
+  done = true;
+  successHeart(cx, cy);
+}
+
+function fadeOutCanvas() {
+  let alpha = 1;
+  const fade = () => {
+    alpha -= 0.08;
+    if (alpha <= 0) {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      points = [];
+      hint.classList.remove('fade');
+      return;
+    }
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.globalAlpha = alpha;
+    drawPath();
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(fade);
+  };
+  fade();
+}
+
+function successHeart(cx, cy) {
+  // Position heart-fill at centroid
+  heartFill.style.left = cx + 'px';
+  heartFill.style.top = cy + 'px';
+  heartFill.style.transform = 'translate(-50%, -50%)';
+
+  // Fade out canvas line
+  let alpha = 1;
+  const fade = () => {
+    alpha -= 0.08;
+    if (alpha <= 0) {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      return;
+    }
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.globalAlpha = alpha;
+    drawPath();
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(fade);
+  };
+  fade();
+
+  // Show heart with beat
+  setTimeout(() => {
+    heartFill.classList.add('show');
+    playHeartSound();
+    hint.style.display = 'none';
+  }, 200);
+
+  // Start flower rain
+  setTimeout(() => {
+    rainFlowers();
+  }, 700);
+
+  // Show final
+  setTimeout(() => {
+    finalEl.classList.add('show');
+  }, 3200);
+}
+
+// Wildflower shapes
+const FLOWER_TYPES = [
+  // Daisy (white-yellow)
+  (size, hue) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    // 8 petals
+    for (let i = 0; i < 8; i++) {
+      const a = (Math.PI * 2 / 8) * i;
+      const x = Math.cos(a) * 18, y = Math.sin(a) * 18;
+      const petal = document.createElementNS(svgNS, 'ellipse');
+      petal.setAttribute('cx', x);
+      petal.setAttribute('cy', y);
+      petal.setAttribute('rx', 16);
+      petal.setAttribute('ry', 9);
+      petal.setAttribute('transform', `rotate(${a * 180 / Math.PI} ${x} ${y})`);
+      petal.setAttribute('fill', '#fffaf0');
+      petal.setAttribute('opacity', '0.95');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 9);
+    center.setAttribute('fill', '#f4c542');
+    svg.appendChild(center);
+    return svg;
+  },
+  // Poppy (red)
+  (size) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    const colors = ['#d63031', '#e84050', '#b22222'];
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 / 5) * i;
+      const x = Math.cos(a) * 14, y = Math.sin(a) * 14;
+      const petal = document.createElementNS(svgNS, 'ellipse');
+      petal.setAttribute('cx', x);
+      petal.setAttribute('cy', y);
+      petal.setAttribute('rx', 22);
+      petal.setAttribute('ry', 18);
+      petal.setAttribute('transform', `rotate(${a * 180 / Math.PI} ${x} ${y})`);
+      petal.setAttribute('fill', col);
+      petal.setAttribute('opacity', '0.92');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 7);
+    center.setAttribute('fill', '#1a1a1a');
+    svg.appendChild(center);
+    return svg;
+  },
+  // Cornflower (blue)
+  (size) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    for (let i = 0; i < 12; i++) {
+      const a = (Math.PI * 2 / 12) * i;
+      const x = Math.cos(a) * 22, y = Math.sin(a) * 22;
+      const petal = document.createElementNS(svgNS, 'polygon');
+      const px1 = Math.cos(a - 0.18) * 30, py1 = Math.sin(a - 0.18) * 30;
+      const px2 = Math.cos(a + 0.18) * 30, py2 = Math.sin(a + 0.18) * 30;
+      petal.setAttribute('points', `0,0 ${px1},${py1} ${px2},${py2}`);
+      petal.setAttribute('fill', '#4a6fb0');
+      petal.setAttribute('opacity', '0.9');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 6);
+    center.setAttribute('fill', '#2a4080');
+    svg.appendChild(center);
+    return svg;
+  },
+  // Lavender bunch
+  (size) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI * 2 / 6) * i;
+      const cx = Math.cos(a) * 16, cy = Math.sin(a) * 16;
+      const petal = document.createElementNS(svgNS, 'ellipse');
+      petal.setAttribute('cx', cx);
+      petal.setAttribute('cy', cy);
+      petal.setAttribute('rx', 18);
+      petal.setAttribute('ry', 12);
+      petal.setAttribute('transform', `rotate(${a * 180 / Math.PI} ${cx} ${cy})`);
+      petal.setAttribute('fill', '#9b7fc7');
+      petal.setAttribute('opacity', '0.9');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 7);
+    center.setAttribute('fill', '#fff5e6');
+    svg.appendChild(center);
+    return svg;
+  },
+  // Buttercup (yellow)
+  (size) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 / 5) * i - Math.PI / 2;
+      const x = Math.cos(a) * 16, y = Math.sin(a) * 16;
+      const petal = document.createElementNS(svgNS, 'circle');
+      petal.setAttribute('cx', x);
+      petal.setAttribute('cy', y);
+      petal.setAttribute('r', 18);
+      petal.setAttribute('fill', '#f9d423');
+      petal.setAttribute('opacity', '0.92');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 8);
+    center.setAttribute('fill', '#d9981a');
+    svg.appendChild(center);
+    return svg;
+  },
+  // Forget-me-not (small blue)
+  (size) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 / 5) * i;
+      const x = Math.cos(a) * 18, y = Math.sin(a) * 18;
+      const petal = document.createElementNS(svgNS, 'circle');
+      petal.setAttribute('cx', x);
+      petal.setAttribute('cy', y);
+      petal.setAttribute('r', 16);
+      petal.setAttribute('fill', '#6ba8d4');
+      petal.setAttribute('opacity', '0.9');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 6);
+    center.setAttribute('fill', '#f9d423');
+    svg.appendChild(center);
+    return svg;
+  },
+  // Pink wildflower
+  (size) => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '-50 -50 100 100');
+    const colors = ['#f7a8c0', '#ec7ca0', '#ffb6c1'];
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI * 2 / 6) * i;
+      const x = Math.cos(a) * 17, y = Math.sin(a) * 17;
+      const petal = document.createElementNS(svgNS, 'ellipse');
+      petal.setAttribute('cx', x);
+      petal.setAttribute('cy', y);
+      petal.setAttribute('rx', 14);
+      petal.setAttribute('ry', 10);
+      petal.setAttribute('transform', `rotate(${a * 180 / Math.PI} ${x} ${y})`);
+      petal.setAttribute('fill', col);
+      petal.setAttribute('opacity', '0.92');
+      svg.appendChild(petal);
+    }
+    const center = document.createElementNS(svgNS, 'circle');
+    center.setAttribute('r', 7);
+    center.setAttribute('fill', '#f9d423');
+    svg.appendChild(center);
+    return svg;
+  },
+];
+
+function rainFlowers() {
+  const total = 80;
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= total) {
+      clearInterval(interval);
+      return;
+    }
+    // Spawn 2 per tick
+    for (let k = 0; k < 2 && i < total; k++, i++) {
+      spawnFlower();
+    }
+  }, 80);
+}
+
+function spawnFlower() {
+  const wrap = document.createElement('div');
+  wrap.className = 'flower';
+  const size = 28 + Math.random() * 36;
+  const typeIdx = Math.floor(Math.random() * FLOWER_TYPES.length);
+  const flower = FLOWER_TYPES[typeIdx](size);
+  wrap.appendChild(flower);
+
+  const startX = Math.random() * window.innerWidth;
+  const startY = -size;
+  const driftX = (-80 + Math.random() * 160);
+  const fallDist = window.innerHeight + size * 2;
+  const dur = 3500 + Math.random() * 2500;
+  const rot = -180 + Math.random() * 360;
+  const swayAmt = 30 + Math.random() * 40;
+
+  wrap.style.left = startX + 'px';
+  wrap.style.top = startY + 'px';
+  wrap.style.opacity = 0.95;
+  document.body.appendChild(wrap);
+
+  const start = performance.now();
+  function step(now) {
+    const t = (now - start) / dur;
+    if (t >= 1) {
+      wrap.remove();
+      return;
+    }
+    const y = t * fallDist;
+    const sway = Math.sin(t * Math.PI * 3) * swayAmt;
+    const x = driftX * t + sway;
+    const r = rot * t;
+    wrap.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+let audioCtx = null;
+function playHeartSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const ctx = audioCtx;
+    // Soft chime
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+      g.gain.setValueAtTime(0, ctx.currentTime + i * 0.08);
+      g.gain.linearRampToValueAtTime(0.15, ctx.currentTime + i * 0.08 + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.7);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.08);
+      osc.stop(ctx.currentTime + i * 0.08 + 0.7);
+    });
+  } catch(e) {}
+}
+
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
